@@ -1,6 +1,7 @@
 #!/user/bin/env python2.7
 
 import unittest
+import nose
 from datetime import date, datetime
 from dateutil.relativedelta import relativedelta
 
@@ -113,3 +114,76 @@ class TestReturnAccountBalance(unittest.TestCase):
         self.payments.append(pa.make_payment(contact_id=self.policy.named_insured,
                                              date_cursor=invoices[1].bill_date, amount=600))
         self.assertEquals(pa.return_account_balance(date_cursor=invoices[1].bill_date), 0)
+
+#Class for testing the invoices created
+class TestMakeInvoices(unittest.TestCase):
+
+    #Method to set up the needed objects during the tests and called on class creation
+    @classmethod
+    def setUpClass(cls):
+        try:
+
+            cls.test_agent = Contact('Test Agent', 'Agent')
+            cls.test_insured = Contact('Test Insured', 'Named Insured')
+            db.session.add(cls.test_agent)
+            db.session.add(cls.test_insured)
+            db.session.flush()
+
+            cls.policy = Policy('Policy test', date(2015, 1, 1), 2400)
+            cls.policy.named_insured = cls.test_insured.id
+            cls.policy.agent = cls.test_agent.id
+            db.session.add(cls.policy)
+            db.session.flush()
+
+        except Exception as error:
+            print(error)
+            db.session.rollback()
+
+    #Method to destroy the objects created during the tests
+    @classmethod
+    def tearDownClass(cls):
+        try:
+
+            db.session.delete(cls.test_insured)
+            db.session.delete(cls.test_agent)
+            db.session.delete(cls.policy)
+            db.session.commit()
+
+        except Exception as error:
+            print(error)
+            db.session.rollback()
+
+    def setUp(self):
+        pass
+
+    def tearDown(self):
+        for invoice in self.policy.invoices:
+            db.session.delete(invoice)
+        db.session.commit()
+
+    # Method to test the creation of Monthly invoices
+    def test_monthly_invoice(self):
+        try:
+
+            self.policy.billing_schedule = "Monthly"
+            pa = PolicyAccounting(self.policy.id)
+
+            invoices_created = db.session.query(Invoice).filter(
+                policy_id=self.policy.id
+            ).all()
+
+            self.assertEquals(len(invoices_created), 12)
+
+            total_amount = 0
+            for invoice in invoices_created:
+                total_amount = total_amount + invoice.amount_due
+
+            self.assertEquals(total_amount, int(self.policy.annual_premium))
+
+        except Exception as error:
+            print(error)
+
+
+
+if __name__ == '__main__':
+    nose.main()
