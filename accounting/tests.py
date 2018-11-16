@@ -135,6 +135,8 @@ class TestMakeInvoices(unittest.TestCase):
             db.session.add(cls.policy)
             db.session.flush()
 
+            db.session.commit()
+
         except Exception as error:
             print(error)
             db.session.rollback()
