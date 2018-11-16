@@ -27,7 +27,7 @@ class PolicyAccounting(object):
             date_cursor = datetime.now().date()
 
         invoices = Invoice.query.filter_by(policy_id=self.policy.id)\
-                                .filter(Invoice.bill_date < date_cursor)\
+                                .filter(Invoice.bill_date <= date_cursor)\
                                 .order_by(Invoice.bill_date)\
                                 .all()
         due_now = 0
@@ -35,7 +35,7 @@ class PolicyAccounting(object):
             due_now += invoice.amount_due
 
         payments = Payment.query.filter_by(policy_id=self.policy.id)\
-                                .filter(Payment.transaction_date < date_cursor)\
+                                .filter(Payment.transaction_date <= date_cursor)\
                                 .all()
         for payment in payments:
             due_now -= payment.amount_paid
@@ -141,7 +141,7 @@ class PolicyAccounting(object):
                                   bill_date + relativedelta(months=1),
                                   bill_date + relativedelta(months=1, days=14),
                                   self.policy.annual_premium / billing_schedules.get(self.policy.billing_schedule))
-                                  
+
                 invoices.append(invoice)
         else:
             print "You have chosen a bad billing schedule."
