@@ -93,20 +93,30 @@ class PolicyAccounting(object):
         # In case the contact id is not passed it uses the id referenced in the Policy table
         if not contact_id:
             try:
-                contact_id = self.policy.named_insured
+
+                if self.policy.named_insured:
+                    contact_id = self.policy.named_insured
+                else:
+                    contact_id = self.policy.agent
             except:
                 logging.info('No contact found during the payment')
 
-        # Creates the payment object
-        payment = Payment(self.policy.id,
-                          contact_id,
-                          amount,
-                          date_cursor)
-        db.session.add(payment)
-        db.session.commit()
+        try:
+            # Creates the payment object
+            payment = Payment(self.policy.id,
+                              contact_id,
+                              amount,
+                              date_cursor)
+            db.session.add(payment)
+            db.session.commit()
 
-        logging.info('Payment made')
-        return payment
+            logging.info('Payment made')
+            return payment
+
+        except Exception as error:
+
+            db.session.rollback()
+            logging.error(error)
 
     def evaluate_cancellation_pending_due_to_non_pay(self, date_cursor=None):
         """
@@ -287,6 +297,28 @@ def new_policy(policy_number, effective_date, annual_premium, billing_schedule, 
 
     except Exception as error:
         logging.error(error)
+
+
+"""Show a guide to make an action in the shell
+
+Parameters
+----------
+action : string
+    The name of the action
+"""
+def user_help(action=""):
+
+    if 'payment' in action:
+        print '''
+            Follow the steps below:
+                1- Create a Policy Accounting using this command: pa = PolicyAccounting(1) - The number inside the PolicyAccounting corresponds to the number of the policy to be paid.
+                2- Use the follow command: pa.make_payment(contact_id=2, ate_cursor=date(2015, 2, 1), amount=365)
+
+                Ps: In case you do not know the contact_id, you can leave it blank
+        '''
+
+    else:
+        print "Explanation for this action is not implemented yet. Please get in contact and We will be happy to help you out."
 
 ################################
 # The functions below are for the db and
