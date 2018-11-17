@@ -182,7 +182,7 @@ class PolicyAccounting(object):
     """
     def make_invoices(self):
         for invoice in self.policy.invoices:
-            invoice.delete()
+            invoice.deleted = 1
 
         # Set the types of billing schedules that can be created
         billing_schedules = {'Annual': None, 'Semi-Annual': 3, 'Quarterly': 4, 'Monthly': 12}
@@ -255,6 +255,46 @@ class PolicyAccounting(object):
         for invoice in invoices:
             db.session.add(invoice)
         db.session.commit()
+
+
+    """Changes the billing schedule in the middle of a policy
+
+    Parameters
+    ----------
+    new_method : string
+        The new billing_schedule
+    date_cursor: date
+        The date to be used as reference
+
+    Returns
+    -------
+        True is the operation was succesful and False if it wasn't
+    """
+    def change_policy_schedule(self, new_method, date_cursor=None):
+        try:
+
+            if not date_cursor:
+                date_cursor = datetime.now().date()
+
+            total_amount_left = self.return_account_balance(date_cursor)
+            payments = Payment.query.filter_by(policy_id=self.policy.id).all()
+
+            for payment in payments:
+                db.session.delete(payment)
+
+            self.policy.annual_premium = total_amount_left
+            self.policy.billing_schedule = new_method
+            db.session.add(self.policy)
+
+            self.make_invoices()
+
+            db.session.commit()
+            return True
+
+        except Exception as error:
+
+            return False
+            logging.info(error)
 
 
 """Creates a new policy

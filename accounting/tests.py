@@ -179,6 +179,22 @@ class TestMakeInvoices(unittest.TestCase):
 
         self.assertEquals(total_amount, int(self.policy.annual_premium))
 
+    # Method to test the billing schedule changing
+    def test_change_policy_schedule(self):
+
+        self.policy.billing_schedule = "Annual"
+        pa = PolicyAccounting(self.policy.id)
+
+        invoices_created = Invoice.query.filter_by(policy_id=self.policy.id).all()
+
+        self.assertEquals(len(invoices_created), 1)
+
+        pa.change_policy_schedule("Monthly", date(2015, 1, 2))
+
+        invoices_created = Invoice.query.filter_by(policy_id=self.policy.id).all()
+
+        self.assertEquals(len(invoices_created), 13) # The new invoices created plus the one marked as deleted
+
 
 #Class for invoices with cancelation pending
 class TestCancelationInvoicesPending(unittest.TestCase):
