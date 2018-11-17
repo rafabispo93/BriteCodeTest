@@ -151,30 +151,44 @@ class PolicyAccounting(object):
     ----------
     date_cursor : date
         The date to be used as reference
+    description: string
+        The description about why the policy the policy cancelled
+    force_cancel: boolean
+        To cancel the policy for other motivation
     """
-    def evaluate_cancel(self, date_cursor=None):
+    def evaluate_cancel(self, description='No account Balance', date_cursor=None, force_cancel=False):
 
         logging.info('Evaluating policy')
 
         if not date_cursor:
             date_cursor = datetime.now().date()
 
-        # Gets all invoices associate to a policy from the beginning to a desired date
-        invoices = Invoice.query.filter_by(policy_id=self.policy.id)\
-                                .filter(Invoice.cancel_date <= date_cursor)\
-                                .order_by(Invoice.bill_date)\
-                                .all()
+        if force_cancel is False:
+            # Gets all invoices associate to a policy from the beginning to a desired date
+            invoices = Invoice.query.filter_by(policy_id=self.policy.id)\
+                                    .filter(Invoice.cancel_date <= date_cursor)\
+                                    .order_by(Invoice.bill_date)\
+                                    .all()
 
-        # For each invoice is tested if it was paid before the cancel date
-        for invoice in invoices:
-            if not self.return_account_balance(invoice.cancel_date):
-                continue
-            else:
-                print "THIS POLICY SHOULD HAVE CANCELED"
-                logging.info('Policy should be canceled')
-                break
+            # For each invoice is tested if it was paid before the cancel date
+            for invoice in invoices:
+                if not self.return_account_balance(invoice.cancel_date):
+                    continue
+                else:
+                    self.policy.status = "Canceled"
+                    self.policy.cancellation_date = date_cursor
+                    self.policy.cancellation_description = description
+                    db.session.add(self.policy)
+                    db.session.commit()
+                    logging.info('Policy should be canceled')
+                    break
         else:
-            print "THIS POLICY SHOULD NOT CANCEL"
+            self.policy.status = "Canceled"
+            self.policy.cancellation_date = date_cursor
+            self.policy.cancellation_description = description
+            db.session.add(self.policy)
+            db.session.commit()
+
 
 
 

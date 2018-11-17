@@ -1,6 +1,6 @@
 from accounting import db
 # from sqlalchemy.ext.declarative import declarative_base
-# 
+#
 # DeclarativeBase = declarative_base()
 
 class Policy(db.Model):
@@ -17,6 +17,8 @@ class Policy(db.Model):
     annual_premium = db.Column(u'annual_premium', db.INTEGER(), nullable=False)
     named_insured = db.Column(u'named_insured', db.INTEGER(), db.ForeignKey('contacts.id'))
     agent = db.Column(u'agent', db.INTEGER(), db.ForeignKey('contacts.id'))
+    cancellation_date = db.Column(u'cancellation_date', db.DATE())
+    cancellation_description = db.Column(u'cancellation_description', db.VARCHAR(length=512))
 
     def __init__(self, policy_number, effective_date, annual_premium):
         self.policy_number = policy_number

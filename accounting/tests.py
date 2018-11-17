@@ -256,5 +256,71 @@ class TestCancelationInvoicesPending(unittest.TestCase):
         invoices_pending = pa.evaluate_cancellation_pending_due_to_non_pay(date(2015, 2, 1))
         self.assertEquals(invoices_pending, False)
 
+#Class for invoices with cancelation pending
+class TestCancelPolicy(unittest.TestCase):
+
+    #Method to set up the needed objects during the tests and called on class creation
+    @classmethod
+    def setUpClass(cls):
+        try:
+
+            cls.test_agent = Contact('Test Agent', 'Agent')
+            cls.test_insured = Contact('Test Insured', 'Named Insured')
+            db.session.add(cls.test_agent)
+            db.session.add(cls.test_insured)
+            db.session.flush()
+
+            cls.policy = Policy('Policy test', date(2015, 1, 5), 400)
+            cls.policy.named_insured = cls.test_insured.id
+            cls.policy.agent = cls.test_agent.id
+            db.session.add(cls.policy)
+            db.session.flush()
+
+            db.session.commit()
+
+        except Exception as error:
+            print(error)
+            db.session.rollback()
+
+    #Method to destroy the objects created during the tests
+    @classmethod
+    def tearDownClass(cls):
+        try:
+
+            db.session.delete(cls.test_insured)
+            db.session.delete(cls.test_agent)
+            db.session.delete(cls.policy)
+            db.session.commit()
+
+        except Exception as error:
+            print(error)
+            db.session.rollback()
+
+    def setUp(self):
+        pass
+
+    def tearDown(self):
+        for invoice in self.policy.invoices:
+            db.session.delete(invoice)
+        db.session.commit()
+
+    # Method to test the cancellation of a Policy
+    def test_cancel_policy(self):
+
+        self.policy.billing_schedule = "Annual"
+        pa = PolicyAccounting(self.policy.id)
+
+        pa.evaluate_cancel(date_cursor=date(2015, 5, 6), force_cancel=False)
+        policy_changed = Policy.query.filter_by(id=self.policy.id).first()
+        self.assertEquals('Canceled', policy_changed.status)
+
+        pa.evaluate_cancel(date_cursor=date(2015, 1, 6), force_cancel=True)
+        policy_changed = Policy.query.filter_by(id=self.policy.id).first()
+        self.assertEquals('Canceled', policy_changed.status)
+
+
+
+
+
 if __name__ == '__main__':
     nose.main()
