@@ -125,7 +125,24 @@ class PolicyAccounting(object):
          being paid in full. However, it has not necessarily
          made it to the cancel_date yet.
         """
-        logging.info('Method evaluate_cancellation_pending_due_to_non_pay() not implemented yet')
+        logging.info('Evaluation cancellation due non pay')
+        try:
+            if not date_cursor:
+                date_cursor = datetime.now().date()
+
+            # Gets all invoices associate to a policy from the beginning to a desired date
+            invoices = Invoice.query.filter_by(policy_id=self.policy.id)\
+                                    .filter(Invoice.due_date < date_cursor)\
+                                    .filter(Invoice.cancel_date < date_cursor)\
+                                    .order_by(Invoice.bill_date)\
+                                    .all()
+            if len(invoices) > 0:
+                return True
+
+            return False
+        except Exception as error:
+            logging.info(error)
+
 
 
     """Evaluates if a Policy should be or should not be canceled
@@ -312,7 +329,7 @@ def user_help(action=""):
         print '''
             Follow the steps below:
                 1- Create a Policy Accounting using this command: pa = PolicyAccounting(1) - The number inside the PolicyAccounting corresponds to the number of the policy to be paid.
-                2- Use the follow command: pa.make_payment(contact_id=2, ate_cursor=date(2015, 2, 1), amount=365)
+                2- Use the follow command: pa.make_payment(contact_id=2, date_cursor=date(2015, 2, 1), amount=365)
 
                 Ps: In case you do not know the contact_id, you can leave it blank
         '''

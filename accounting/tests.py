@@ -165,27 +165,80 @@ class TestMakeInvoices(unittest.TestCase):
 
     # Method to test the creation of Monthly invoices
     def test_monthly_invoice(self):
+
+        self.policy.billing_schedule = "Monthly"
+        pa = PolicyAccounting(self.policy.id)
+
+        invoices_created = Invoice.query.filter_by(policy_id=self.policy.id).all()
+
+        self.assertEquals(len(invoices_created), 12)
+
+        total_amount = 0
+        for invoice in invoices_created:
+            total_amount = total_amount + invoice.amount_due
+
+        self.assertEquals(total_amount, int(self.policy.annual_premium))
+
+
+#Class for invoices with cancelation pending
+class TestCancelationInvoicesPending(unittest.TestCase):
+
+    #Method to set up the needed objects during the tests and called on class creation
+    @classmethod
+    def setUpClass(cls):
         try:
 
-            self.policy.billing_schedule = "Monthly"
-            pa = PolicyAccounting(self.policy.id)
+            cls.test_agent = Contact('Test Agent', 'Agent')
+            cls.test_insured = Contact('Test Insured', 'Named Insured')
+            db.session.add(cls.test_agent)
+            db.session.add(cls.test_insured)
+            db.session.flush()
 
-            invoices_created = db.session.query(Invoice).filter(
-                policy_id=self.policy.id
-            ).all()
+            cls.policy = Policy('Policy test', date(2015, 1, 1), 2400)
+            cls.policy.named_insured = cls.test_insured.id
+            cls.policy.agent = cls.test_agent.id
+            db.session.add(cls.policy)
+            db.session.flush()
 
-            self.assertEquals(len(invoices_created), 12)
-
-            total_amount = 0
-            for invoice in invoices_created:
-                total_amount = total_amount + invoice.amount_due
-
-            self.assertEquals(total_amount, int(self.policy.annual_premium))
+            db.session.commit()
 
         except Exception as error:
             print(error)
+            db.session.rollback()
 
+    #Method to destroy the objects created during the tests
+    @classmethod
+    def tearDownClass(cls):
+        try:
 
+            db.session.delete(cls.test_insured)
+            db.session.delete(cls.test_agent)
+            db.session.delete(cls.policy)
+            db.session.commit()
+
+        except Exception as error:
+            print(error)
+            db.session.rollback()
+
+    def setUp(self):
+        pass
+
+    def tearDown(self):
+        for invoice in self.policy.invoices:
+            db.session.delete(invoice)
+        db.session.commit()
+
+    # Method to test the evaluate_cancellation_pending_due_to_non_pay
+    def test_pending_invoice(self):
+
+        self.policy.billing_schedule = "Annual"
+        pa = PolicyAccounting(self.policy.id)
+
+        invoices_pending = pa.evaluate_cancellation_pending_due_to_non_pay(date(2015, 3, 3))
+        self.assertEquals(invoices_pending, True)
+
+        invoices_pending = pa.evaluate_cancellation_pending_due_to_non_pay(date(2015, 2, 1))
+        self.assertEquals(invoices_pending, False)
 
 if __name__ == '__main__':
     nose.main()
