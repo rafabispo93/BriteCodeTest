@@ -229,6 +229,65 @@ class PolicyAccounting(object):
             db.session.add(invoice)
         db.session.commit()
 
+
+"""Creates a new policy
+
+Parameters
+----------
+policy_number : string
+    The name of the policy
+effective_date : date
+    the start date of the policy
+billing_schedule: string
+    the type of billing
+agent: string
+    The name of the agent
+named_insured: string
+    The name of the insured
+annual_premium: float
+    The value of the policy
+"""
+def new_policy(policy_number, effective_date, annual_premium, billing_schedule, agent=None, named_insured=None):
+
+    try:
+
+        # makes a new policy object
+        new_policy = Policy(policy_number, effective_date, annual_premium)
+        new_policy.billing_schedule = billing_schedule
+
+        # check if a named_insured was passed, if it was passed get the reference object from the db
+        if named_insured:
+            named_insured_ = Contact.query.filter_by(name=named_insured, role="Named Insured").first()
+
+            # if there is not a contact with this name a new one is created
+            if not named_insured_:
+                contact = Contact(named_insured, 'Named Insured')
+                named_insured_ = contact
+                db.session.add(contact)
+                db.session.commit()
+            named_insured = named_insured_.id
+
+        # check if a agent was passed, if it was passed get the reference object from the db
+        if agent:
+            agent_ = Contact.query.filter_by(name=agent, role="Agent").first()
+
+            # if there is not a contact with this name a new one is created
+            if not agent_:
+                contact = Contact(agent, 'Agent')
+                agent_ = contact
+                db.session.add(contact)
+                db.session.commit()
+
+            agent = agent_.id
+
+        new_policy.named_insured = named_insured
+        new_policy.agent = agent
+        db.session.add(new_policy)
+        db.session.commit()
+
+    except Exception as error:
+        logging.error(error)
+
 ################################
 # The functions below are for the db and
 # shouldn't need to be edited.
