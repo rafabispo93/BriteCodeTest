@@ -1,15 +1,99 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="utf-8">
-  <title>Some sort of title?</title>
-  <meta name="description" content="What is this?">
-  <meta name="author" content="Who?">
-  <!--[if lt IE 9]>
-<script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-<![endif]-->
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>Policy System</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="./static/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="./static/css/simple-sidebar.css" rel="stylesheet">
+
 </head>
+
 <body>
-    <p>Your server is working.</p>
+
+    <div id="wrapper" class="toggled">
+
+        <!-- Sidebar -->
+        <div id="sidebar-wrapper">
+            <ul class="sidebar-nav">
+                <li class="sidebar-brand">
+                    <a href="#">
+                        Policy System
+                    </a>
+                </li>
+                <li>
+                    <a href="#">Policy Information</a>
+                </li>
+            </ul>
+        </div>
+        <div id="page-content-wrapper">
+
+            <div class="container-fluid">
+              <form action='/policy' method="post" role="form">
+                <div class="form-group">
+                  <label for="policy">Policy Number</label>
+                  <input type="number" name="id" class="form-control" id="id" placeholder="Enter a Policy ID">
+                </div>
+                <div class="form-group">
+                  <label class="control-label" for="date">Date</label>
+                  <input class="form-control" id="date" name="date" placeholder="MM/DD/YYY" type="date"/>
+                </div>
+                <button type="submit" class="btn btn-primary">Submit</button>
+              </form>
+            </div>
+        </div>
+        <!-- /#page-content-wrapper -->
+        {% if data %}
+          {% if not data.error %}
+            <div>
+              <h2  id="policy-number">Policy Number: {{data.policy.id}}</h2>
+              <h2  id="balance">Account Balance: {{data.balance}}</h2>
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">Bill Date</th>
+                    <th scope="col">Due date</th>
+                    <th scope="col">Amount Due</th>
+                    <th scope="col">Deleted</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for invoice in data.invoices %}
+                  <tr>
+                    <th scope="row">{{invoice.id}}</th>
+                    <td>{{invoice.bill_date}}</td>
+                    <td>{{invoice.due_date}}</td>
+                    <td>{{invoice.amount_due}}</td>
+                    <td>{{invoice.deleted}}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% endif %}
+          {% if data.error %}
+            <h2>{{data.error}}</h2>
+          {% endif %}
+        {% endif %}
+
+
+    </div>
+    <!-- /#wrapper -->
+
+    <!-- Bootstrap core JavaScript -->
+    <script src="./static/vendor/jquery/jquery.min.js"></script>
+    <script src="./static/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+
 </body>
+
 </html>
