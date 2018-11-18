@@ -25,7 +25,7 @@ def get_policy():
             date_ = date(int(date_list[0]), int(date_list[1]), int(date_list[2]))
 
             policy = Policy.query.filter_by(id=policy_id).first()
-            
+
             if not policy:
                 return render_template('index.html', data={'error': 'Policy not found'})
 
